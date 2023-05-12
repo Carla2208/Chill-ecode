@@ -1,0 +1,17 @@
+{% extends 'core/base_admin.html' %}
+<form method="post" action="{% url 'ejemplos_proyect_edit_save' %}">
+    {% csrf_token %}
+    <input type="hidden" name="id" value="{{proyect_data.id}}"/>
+    <input type="text" name="nombre" value="{{proyect_data.nombre}}"/>
+    <input type="text" name="descripcion" value="{{proyect_data.descripcion }}"/>
+    <select name="proveedor" multiple>
+        {% for a in proveedor_list %}           
+            {% if a.id in proveedor_data_list %}
+                <option value="{{a.id}}" selected >{{a.nombre}}</option>
+            {% else %}
+                <option value="{{a.id}}">{{a.nombre}}</option>
+            {% endif %}
+       {%endfor %}
+    </select>
+    <input type="submit"/>
+</form>

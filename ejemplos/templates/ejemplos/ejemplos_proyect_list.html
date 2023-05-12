@@ -1,0 +1,11 @@
+{% extends 'core/base_admin.html' %}
+{%for l in proyect_list %}
+    nombre: {{l.nombre}}<br/>
+    descripcion: {{l.descripcion}}<br/>
+    <a href="{% url 'ejemplos_proyect_edit' l.id %}">Edita</a>
+    <br/>
+{% endfor %}
+</br>
+<a href="{% url 'agregar_proveedor' %}">Nuevo Proveedor</a>
+</br>
+<a href="{% url 'ejemplos_proyect_new' %}">Nuevo Proyecto</a>
