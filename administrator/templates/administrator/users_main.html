@@ -1,4 +1,4 @@
-{% extends 'core/base_admin.html' %}
+{% extends "administrator/index_main.html" %}
 {% load static %}
 {% block content %}
 
@@ -8,20 +8,14 @@
             <h1 class="mb-3 text-blue text-center">GESTIÓN DE USUARIOS</h1>
             <!-- <div class="row mt-4 mb-4"></div> -->
             {% if profiles.group_id == 1%}
-            <a href="{% url 'new_user' %}" class="btn btn-dark" style="background-color: #000000;" type="button">Nuevo
-                Usuario</a>
             {% endif %}
             {% for g in groups %}
             <div class="col-12 col-sm-3 mb-3"></div>
-            <a href="{% url 'list_main' g.id %}" class="btn btn-dark" style="background-color: #000000;"
+            <a href="{% url 'list_main' g.id %}" class="btn btn-dark"
                 type="button">{{g.name}}</a>
             {% endfor %}
-            <div class="col-12 col-sm-3 mb-3"></div>
-            <a href="{% url 'masiva_usuarios' %}" class="btn btn-dark" style="background-color: #000000;"
-                type="button">Carga Masiva</a>
-            <div class="col-12 col-sm-3 mb-3"></div>
-            <a href="{% url 'admin_main' %}" class="btn btn-dark" style="background-color: #000000;"
-                type="button">Volver</a>
+
+
         <!-- </div> -->
     </div>
 </main>

@@ -6,8 +6,6 @@ import xlwt
 from turtle import home
 import pandas as pd
 from datetime import datetime, time, timedelta
-
-
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -20,8 +18,48 @@ from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from registration.models import Profile
+from django.db.models import Q
 
+import plotly.graph_objs as go
+@login_required
+def dashboard7(request):
+    # Obtener todos los usuarios
+    usuarios = User.objects.all()
 
+    # Gráfico de barras: Usuarios creados por fecha
+    fechas = usuarios.dates('date_joined', 'day')
+    labels = [fecha.strftime('%Y-%m-%d') for fecha in fechas]
+    values = [usuarios.filter(date_joined__date=fecha).count() for fecha in fechas]
+
+    fig1 = go.Figure(data=go.Bar(x=labels, y=values))
+    fig1.update_layout(title='Usuarios creados por fecha')
+    plot_data1 = fig1.to_html(full_html=False)
+
+    # Gráfico de pastel: Estado de los usuarios
+    estados = ['Activos', 'Bloqueados']
+    values2 = [
+        usuarios.filter(is_active=True).count(),
+        usuarios.filter(is_active=False).count(),
+    ]
+
+    fig2 = go.Figure(data=[go.Pie(labels=estados, values=values2)])
+    fig2.update_layout(title='Estado de los usuarios')
+    plot_data2 = fig2.to_html(full_html=False)
+
+    # Datos útiles
+    cantidad_usuarios_activos = usuarios.filter(is_active=True).count()
+    cantidad_usuarios_bloqueados = usuarios.filter(is_active=False).count()
+    ultimo_usuario_creado = usuarios.latest('date_joined')
+
+    context = {
+        'plot_data1': plot_data1,  # Gráfico 1 convertido a HTML
+        'plot_data2': plot_data2,  # Gráfico 2 convertido a HTML
+        'cantidad_usuarios_activos': cantidad_usuarios_activos,  # Cantidad de usuarios activos
+        'cantidad_usuarios_bloqueados': cantidad_usuarios_bloqueados,  # Cantidad de usuarios bloqueados
+        'ultimo_usuario_creado': ultimo_usuario_creado,  # Último usuario creado
+    }
+
+    return render(request, 'administrator/dashboard7.html', context)
 @login_required
 def admin_main(request):
     profiles = Profile.objects.get(user_id = request.user.id)
@@ -134,30 +172,36 @@ def edit_user(request,user_id):
     return render(request,template_name,{'user_data':user_data,'profile_data':profile_data,'groups':groups,'profile_list':profile_list})
 
 @login_required    
-def list_user_active(request,group_id,page=None):
-    profiles = Profile.objects.get(user_id = request.user.id)
+def list_user_active(request, group_id, page=None):
+    profiles = Profile.objects.get(user_id=request.user.id)
     if profiles.group_id != 1 and profiles.group_id != 2:
-        messages.add_message(request, messages.INFO, 'Intenta ingresar a una area para la que no tiene permisos')
+        messages.add_message(request, messages.INFO, 'Intenta ingresar a una área para la que no tiene permisos')
         return redirect('check_group_main')
-    if page == None:
+    
+    buscar = request.GET.get('buscar')  # Obtener el valor del parámetro de búsqueda
+    
+    if page is None:
         page = request.GET.get('page')
-    else:
-        page = page
-    if request.GET.get('page') == None:
-        page = page
-    else:
-        page = request.GET.get('page')
+    
     group = Group.objects.get(pk=group_id)
     user_all = []
-    user_array = User.objects.filter(is_active='t').filter(profile__group_id=group_id).order_by('first_name')
+    
+    user_array = User.objects.filter(is_active=True, profile__group_id=group_id).order_by('first_name')
+    
+    if buscar:  # Aplicar el filtro de búsqueda si se proporciona un valor
+        user_array = user_array.filter(first_name__icontains=buscar) | user_array.filter(last_name__icontains=buscar)
+    
     for us in user_array:
         profile_data = Profile.objects.get(user_id=us.id)
-        name = us.first_name+' '+us.last_name
-        user_all.append({'id':us.id,'user_name':us.username,'name':name,'mail':us.email})
-    paginator = Paginator(user_all, 30)  
+        name = us.first_name + ' ' + us.last_name
+        user_all.append({'id': us.id, 'user_name': us.username, 'name': name, 'mail': us.email})
+    
+    paginator = Paginator(user_all, 30)
     user_list = paginator.get_page(page)
     template_name = 'administrator/list_user_active.html'
-    return render(request,template_name,{'profiles':profiles,'group':group,'user_list':user_list,'paginator':paginator,'page':page})
+    
+    return render(request, template_name, {'profiles': profiles, 'group': group, 'user_list': user_list, 'paginator': paginator, 'page': page})
+
 @login_required    
 def list_user_block(request,group_id,page=None):
     profiles = Profile.objects.get(user_id = request.user.id)
